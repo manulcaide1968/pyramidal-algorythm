@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pyramidal Algorithm: Progressive Reduction (FREE)</title>
+  <meta name="theme-color" content="#FFD700">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    body { background: linear-gradient(to bottom, #000428, #000000); margin: 0; font-family: 'Inter', sans-serif; min-height: 100vh; }
+    .number-btn { transition: all 0.2s; }
+    .number-btn.selected { transform: scale(1.1); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const DISCLAIMER_TEXT = `Disclaimer: This application, 'Pyramidal Algorithm Pro', is an independent number generation tool based on a proprietary progressive reduction method. It is NOT affiliated, endorsed, or associated with the official Mega Millions lottery. The use of this app is for informational and entertainment purposes only, and it does not guarantee lottery results in any way.`;
+
+    const PyramidalApp = () => {
+      const [screen, setScreen] = useState('disclaimer');
+      const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
+      const isPremium = false;
+      const [selections, setSelections] = useState({ 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0 });
+      const [selectedNumbers, setSelectedNumbers] = useState({});
+      const [megaBallMode, setMegaBallMode] = useState('auto');
+      const [selectedMegaBalls, setSelectedMegaBalls] = useState([]);
+      const [generatedCombos, setGeneratedCombos] = useState([]);
+      const [currentGrid, setCurrentGrid] = useState(0);
+      const [simSize, setSimSize] = useState(13);
+      const [simNumbers, setSimNumbers] = useState([]);
+      const [simWinning, setSimWinning] = useState([]);
+      const [simResults, setSimResults] = useState(null);
+      
+      const [freeUsesLeft, setFreeUsesLeft] = useState(() => {
+        const saved = localStorage.getItem('freeUsesLeft');
+        return saved !== null ? parseInt(saved) : 3;
+      });
+
+      useEffect(() => {
+        const accepted = localStorage.getItem('disclaimer_accepted') === 'true';
+        if (accepted) {
+          setDisclaimerAccepted(true);
+          setScreen('home');
+        }
+      }, []);
+
+      const acceptDisclaimer = () => {
+        localStorage.setItem('disclaimer_accepted', 'true');
+        setDisclaimerAccepted(true);
+        setScreen('home');
+      };
+
+      const consumeUse = () => {
+        if (freeUsesLeft > 0) {
+          const newCount = freeUsesLeft - 1;
+          setFreeUsesLeft(newCount);
+          localStorage.setItem('freeUsesLeft', newCount);
+          return true;
+        }
+        return false;
+      };
+
+      const goToProVersion = () => {
+        window.location.href = 'market://details?id=com.yourapp.pyramidal.pro';
+      };
+
+      const reductionFormulas = {
+        8: { bets: 4,  guarantees: { 3: 98.21, 4: 66.07, 5: 7.14 } },
+        9: { bets: 6,  guarantees: { 3: 100,   4: 66.66, 5: 4.76 } },
+        10: { bets: 8, guarantees: { 3: 98.80, 4: 53.17, 5: 3.17 } },
+        11: { bets: 12,guarantees: { 3: 99.35, 4: 53.89, 5: 2.59 } },
+        12: { bets: 32,guarantees: { 3: 100,   4: 71.64, 5: 4.11 } },
+        13: { bets: 48,guarantees: { 3: 99.78, 4: 99.23, 5: 3.03 } }
+      };
+
+      const exportCombinations = () => {
+        let text = 'PYRAMIDAL ALGORITHM\n' + '='.repeat(50) + '\n\n';
+        generatedCombos.forEach((combo, i) => {
+          text += `Bet ${i+1}: ${combo.numbers.join('-')} + MB: ${combo.megaBall}\n`;
+        });
+        text += `\nTotal: ${generatedCombos.length} bets\n`;
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'pyramidal_combinations.txt'; a.click();
+        URL.revokeObjectURL(url);
+      };
+
+      const applyReductionFormula = (nums, size) => {
+        const formulas = {
+          8: (n) => [[n[0],n[1],n[3],n[4],n[5]], [n[0],n[2],n[3],n[5],n[6]], [n[0],n[1],n[3],n[4],n[7]], [n[0],n[2],n[3],n[5],n[7]]],
+          9: (n) => [[n[0],n[1],n[2],n[4],n[5]], [n[0],n[2],n[3],n[4],n[6]], [n[0],n[1],n[2],n[5],n[7]], [n[1],n[2],n[3],n[6],n[8]], [n[0],n[3],n[4],n[7],n[8]], [n[1],n[5],n[6],n[7],n[8]]],
+          10: (n) => [[n[0],n[1],n[2],n[3],n[4]], [n[0],n[2],n[3],n[5],n[6]], [n[0],n[1],n[4],n[7],n[8]], [n[1],n[2],n[5],n[7],n[9]], [n[0],n[3],n[6],n[8],n[9]], [n[1],n[3],n[4],n[6],n[9]], [n[2],n[4],n[5],n[8],n[9]], [n[1],n[6],n[7],n[8],n[9]]],
+          11: (n) => [[n[0],n[1],n[2],n[3],n[4]], [n[0],n[2],n[3],n[5],n[6]], [n[0],n[1],n[4],n[7],n[8]], [n[1],n[2],n[5],n[7],n[9]], [n[0],n[3],n[6],n[8],n[10]], [n[1],n[3],n[4],n[6],n[10]], [n[2],n[4],n[5],n[8],n[10]], [n[1],n[6],n[7],n[9],n[10]], [n[0],n[5],n[7],n[8],n[9]], [n[2],n[3],n[6],n[9],n[10]], [n[0],n[4],n[5],n[9],n[10]], [n[1],n[2],n[8],n[9],n[10]]],
+          12: (n) => {
+            const combos = [];
+            const base = [
+              [n[0],n[1],n[2],n[3],n[4],n[5],n[6],n[8],n[9],n[10]],
+              [n[0],n[2],n[3],n[5],n[6],n[7],n[8],n[9],n[10],n[11]]
+            ];
+            base.forEach(arr => {
+              combos.push([arr[0],arr[1],arr[2],arr[3],arr[4]]);
+              combos.push([arr[0],arr[2],arr[3],arr[4],arr[5]]);
+              combos.push([arr[1],arr[2],arr[3],arr[5],arr[6]]);
+              combos.push([arr[0],arr[1],arr[4],arr[7],arr[8]]);
+              combos.push([arr[0],arr[3],arr[5],arr[7],arr[9]]);
+              combos.push([arr[1],arr[3],arr[6],arr[8],arr[9]]);
+              combos.push([arr[2],arr[4],arr[6],arr[8],arr[10]]);
+              combos.push([arr[1],arr[4],arr[5],arr[9],arr[10]]);
+            });
+            return combos.slice(0, 32);
+          },
+          13: (n) => {
+            const combos = [];
+            const base = [
+              [n[0],n[1],n[2],n[3],n[4],n[5],n[6],n[8],n[9],n[10],n[12]],
+              [n[0],n[2],n[3],n[5],n[6],n[7],n[8],n[9],n[10],n[11],n[12]]
+            ];
+            base.forEach(arr => {
+              combos.push([arr[0],arr[1],arr[2],arr[3],arr[4]]);
+              combos.push([arr[0],arr[2],arr[3],arr[4],arr[5]]);
+              combos.push([arr[1],arr[2],arr[3],arr[5],arr[6]]);
+              combos.push([arr[0],arr[1],arr[4],arr[7],arr[8]]);
+              combos.push([arr[0],arr[3],arr[5],arr[7],arr[9]]);
+              combos.push([arr[1],arr[3],arr[6],arr[8],arr[9]]);
+              combos.push([arr[2],arr[4],arr[6],arr[8],arr[10]]);
+              combos.push([arr[1],arr[4],arr[5],arr[9],arr[10]]);
+              combos.push([arr[0],arr[5],arr[7],arr[9],arr[11]]);
+              combos.push([arr[1],arr[6],arr[8],arr[10],arr[11]]);
+              combos.push([arr[2],arr[3],arr[7],arr[9],arr[12]]);
+              combos.push([arr[0],arr[4],arr[6],arr[10],arr[12]]);
+            });
+            return combos.slice(0, 48);
+          }
+        };
+        return formulas[size](nums);
+      };
+
+      const generateCombinations = () => {
+        if (!consumeUse()) {
+          alert('No free uses left! Upgrade to PRO for unlimited access.');
+          return;
+        }
+
+        const all = [];
+        Object.keys(selections).forEach(size => {
+          const count = selections[size];
+          for (let i = 0; i < count; i++) {
+            const userNums = selectedNumbers[size]?.[i] || [];
+            if (userNums.length === parseInt(size)) {
+              const combos = applyReductionFormula(userNums, parseInt(size));
+              combos.forEach(combo => {
+                if (megaBallMode === 'auto') {
+                  all.push({ numbers: combo, megaBall: Math.floor(Math.random() * 25) + 1 });
+                } else {
+                  selectedMegaBalls.forEach(mb => all.push({ numbers: combo, megaBall: mb }));
+                }
+              });
+            }
+          }
+        });
+        setGeneratedCombos(all);
+        setScreen('results');
+      };
+
+      const goHome = () => {
+        setScreen('home');
+        setSelections({ 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0 });
+        setSelectedNumbers({});
+        setSelectedMegaBalls([]);
+        setGeneratedCombos([]);
+        setCurrentGrid(0);
+        setSimResults(null);
+      };
+
+      const gridsInfo = [];
+      Object.entries(selections).forEach(([size, count]) => {
+        for (let i = 0; i < count; i++) gridsInfo.push({ size: parseInt(size), index: i });
+      });
+      const current = gridsInfo[currentGrid] || { size: 13, index: 0 };
+      const currentNums = selectedNumbers[current.size]?.[current.index] || [];
+
+      const toggleNumber = (num) => {
+        const updated = { ...selectedNumbers };
+        if (!updated[current.size]) updated[current.size] = {};
+        if (!updated[current.size][current.index]) updated[current.size][current.index] = [];
+        const arr = updated[current.size][current.index];
+        if (arr.includes(num)) {
+          updated[current.size][current.index] = arr.filter(n => n !== num);
+        } else if (arr.length < current.size) {
+          updated[current.size][current.index] = [...arr, num].sort((a, b) => a - b);
+        }
+        setSelectedNumbers(updated);
+      };
+
+      const runSimulation = () => {
+        if (!consumeUse()) {
+          alert('No free uses left! Upgrade to PRO for unlimited access.');
+          return;
+        }
+
+        if (simNumbers.length !== simSize || simWinning.length !== 5) return;
+        const combos = applyReductionFormula(simNumbers, simSize);
+        const results = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+        combos.forEach(combo => {
+          const hits = combo.filter(n => simWinning.includes(n)).length;
+          results[hits]++;
+        });
+        setSimResults(results);
+      };
+
+      const toggleSimNumber = (num) => {
+        if (simNumbers.includes(num)) {
+          setSimNumbers(simNumbers.filter(n => n !== num));
+          setSimWinning(simWinning.filter(n => n !== num));
+        } else if (simNumbers.length < simSize) {
+          setSimNumbers([...simNumbers, num].sort((a, b) => a - b));
+        }
+      };
+
+      const toggleWinning = (num) => {
+        if (!simNumbers.includes(num)) return;
+        if (simWinning.includes(num)) {
+          setSimWinning(simWinning.filter(n => n !== num));
+        } else if (simWinning.length < 5) {
+          setSimWinning([...simWinning, num].sort((a, b) => a - b));
+        }
+      };
+
+      const DisclaimerScreen = () => (
+        <div className="p-6 flex flex-col items-center justify-center min-h-screen text-center space-y-6">
+          <h1 className="text-3xl font-black text-yellow-400">Pyramidal Algorithm</h1>
+          <div className="bg-blue-900/50 rounded-xl p-6 max-w-2xl text-sm text-gray-300 leading-relaxed border border-yellow-500">
+            <p className="whitespace-pre-line">{DISCLAIMER_TEXT}</p>
+          </div>
+          <button 
+            onClick={acceptDisclaimer}
+            className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-lg text-lg"
+          >
+            I Accept & Continue
+          </button>
+        </div>
+      );
+
+      const HomeScreen = () => (
+        <div className="p-6 space-y-6">
+          <div className="bg-gradient-to-r from-green-500/20 to-green-600/20 border-2 border-green-500 rounded-xl p-4">
+            <p className="text-center text-green-400 font-bold text-lg">
+              🎁 FREE TRIAL: {freeUsesLeft}/3 uses remaining
+            </p>
+            <p className="text-center text-gray-300 text-sm mt-1">
+              Try all features - Systems & Simulator
+            </p>
+          </div>
+
+          <div className="bg-gradient-to-r from-yellow-500/20 to-yellow-600/20 border-2 border-yellow-500 rounded-xl p-4">
+            <div className="text-center mb-3">
+              <p className="text-yellow-400 font-bold text-lg">🔓 Unlock Unlimited Access</p>
+              <p className="text-gray-300 text-sm">Generate systems without limits</p>
+            </div>
+            <button onClick={goToProVersion} className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-blue-900 font-bold py-4 rounded-lg text-lg">
+              UPGRADE TO PRO - $9.99
+            </button>
+          </div>
+
+          <div className="text-center">
+            <h1 className="text-4xl font-black text-white">PYRAMIDAL</h1>
+            <p className="text-2xl text-yellow-400 font-bold">ALGORITHM</p>
+            <p className="text-sm text-gray-400 mt-1">FREE Trial Version</p>
+          </div>
+
+          {freeUsesLeft === 0 && (
+            <div className="bg-red-900/50 p-5 rounded-lg border-2 border-red-500">
+              <p className="text-white font-bold text-center text-lg">Free uses finished!</p>
+              <p className="text-gray-300 text-sm text-center mt-2">Upgrade to PRO for unlimited access</p>
+              <button onClick={goToProVersion} className="w-full mt-4 bg-yellow-500 hover:bg-yellow-600 text-blue-900 font-bold py-3 rounded-lg">
+                GET PRO VERSION - $9.99
+              </button>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {[8,9,10,11,12,13].map(num => (
+              <div key={num} className={`rounded-lg p-4 flex justify-between items-center ${freeUsesLeft > 0 ? 'bg-blue-900/50' : 'bg-gray-800 opacity-50'}`}>
+                <div>
+                  <span className="text-white font-bold">{num} numbers → {reductionFormulas[num].bets} bets</span>
+                  <p className="text-xs text-yellow-400">{reductionFormulas[num].guarantees[3]}% 3+ • {reductionFormulas[num].guarantees[4]}% 4+</p>
+                </div>
+                {freeUsesLeft > 0 ? (
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setSelections(p => ({...p, [num]: Math.max(0, p[num]-1)}))} className="bg-red-600 w-10 h-10 rounded-lg font-bold text-white">-</button>
+                    <span className="w-12 text-center font-bold text-xl text-white">{selections[num]}</span>
+                    <button onClick={() => setSelections(p => ({...p, [num]: Math.min(5, p[num]+1)}))} className="bg-red-600 w-10 h-10 rounded-lg font-bold text-white">+</button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <span className="text-sm">🔒 PRO</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <button 
+              onClick={() => freeUsesLeft > 0 && setScreen('simulator')}
+              className={`py-4 rounded-lg font-bold ${freeUsesLeft > 0 ? 'bg-yellow-500 text-blue-900 hover:bg-yellow-600' : 'bg-gray-700 text-gray-500'}`}>
+              SIMULATOR {freeUsesLeft === 0 && '🔒'}
+            </button>
+            <button onClick={() => setScreen('guarantees')} 
+              className="py-4 rounded-lg bg-yellow-500 text-blue-900 font-bold hover:bg-yellow-600">
+              GUARANTEES
+            </button>
+          </div>
+
+          <button 
+            onClick={() => freeUsesLeft > 0 && Object.values(selections).some(v=>v>0) && setScreen('numbers')}
+            disabled={freeUsesLeft === 0 || !Object.values(selections).some(v=>v>0)}
+            className={`w-full py-4 rounded-lg font-bold text-xl ${freeUsesLeft > 0 && Object.values(selections).some(v=>v>0) ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}>
+            GENERATE SYSTEMS {freeUsesLeft === 0 && '🔒'}
+          </button>
+
+          <div className="bg-blue-900/30 rounded-lg p-4 border border-blue-500">
+            <p className="text-white font-bold mb-2">✨ PRO Features:</p>
+            <ul className="text-gray-300 text-sm space-y-1">
+              <li>• Unlimited bet generation</li>
+              <li>• Unlimited simulator use</li>
+              <li>• Custom number selection (8-13)</li>
+              <li>• Export combinations</li>
+              <li>• No limitations</li>
+            </ul>
+            <button onClick={goToProVersion} className="w-full mt-3 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg">
+              UPGRADE NOW - $9.99
+            </button>
+          </div>
+        </div>
+      );
+
+      const NumberPickerScreen = () => (
+        <div className="p-6">
+          <div className="mb-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold text-white">Grid {currentGrid + 1}/{gridsInfo.length} — {current.size} numbers</h2>
+              <span className="text-yellow-400 font-bold">Uses: {freeUsesLeft}/3</span>
+            </div>
+            <p className="text-gray-300">Selected: {currentNums.length}/{current.size}</p>
+          </div>
+
+          <div className="grid grid-cols-7 gap-2 mb-6">
+            {Array.from({length: 70}, (_, i) => i + 1).map(num => (
+              <button key={num} onClick={() => toggleNumber(num)}
+                className={`h-12 rounded-lg font-bold transition-all number-btn ${currentNums.includes(num) ? 'bg-red-600 text-white selected' : 'bg-blue-900/50 text-gray-300 hover:bg-blue-800'}`}>
+                {num}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex gap-3">
+            {currentGrid > 0 && <button onClick={() => setCurrentGrid(c => c-1)} className="flex-1 bg-gray-600 py-3 rounded-lg text-white font-bold">PREVIOUS</button>}
+            {currentGrid < gridsInfo.length - 1 ? (
+              <button onClick={() => currentNums.length === current.size && setCurrentGrid(c => c+1)} disabled={currentNums.length !== current.size}
+                className={`flex-1 py-3 rounded-lg font-bold ${currentNums.length === current.size ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-500'}`}>
+                NEXT
+              </button>
+            ) : (
+              <button onClick={() => currentNums.length === current.size && setScreen('megaball')} disabled={currentNums.length !== current.size}
+                className={`flex-1 py-3 rounded-lg font-bold text-lg ${currentNums.length === current.size ? 'bg-yellow-500 text-blue-900' : 'bg-gray-700 text-gray-500'}`}>
+                MEGA BALL
+              </button>
+            )}
+          </div>
+
+          <button onClick={goHome} className="mt-6 w-full bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 rounded-lg">
+            BACK TO HOME
+          </button>
+        </div>
+      );
+
+      const MegaBallScreen = () => (
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-white">Mega Ball</h2>
+            <span className="text-yellow-400 font-bold">Uses: {freeUsesLeft}/3</span>
+          </div>
+          
+          <button onClick={() => { setMegaBallMode('auto'); setSelectedMegaBalls([]); }}
+            className={`w-full p-4 rounded-lg mb-3 font-bold ${megaBallMode === 'auto' ? 'bg-red-600 text-white' : 'bg-blue-900/50 text-gray-300'}`}>
+            AUTO (Random)
+          </button>
+          <button onClick={() => setMegaBallMode('manual')}
+            className={`w-full p-4 rounded-lg mb-6 font-bold ${megaBallMode === 'manual' ? 'bg-red-600 text-white' : 'bg-blue-900/50 text-gray-300'}`}>
+            MANUAL
+          </button>
+
+          {megaBallMode === 'manual' && (
+            <div className="grid grid-cols-5 gap-2 mb-6">
+              {Array.from({length: 25}, (_, i) => i + 1).map(n => (
+                <button key={n} onClick={() => setSelectedMegaBalls(p => p.includes(n) ? p.filter(x=>x!==n) : [...p, n].sort((a,b)=>a-b))}
+                  className={`h-12 rounded-lg font-bold ${selectedMegaBalls.includes(n) ? 'bg-yellow-500 text-blue-900' : 'bg-blue-900/50 text-gray-300 hover:bg-blue-800'}`}>
+                  {n}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <button onClick={generateCombinations} disabled={megaBallMode === 'manual' && selectedMegaBalls.length === 0}
+            className={`w-full py-5 rounded-lg font-bold text-xl ${megaBallMode === 'manual' && selectedMegaBalls.length === 0 ? 'bg-gray-700 text-gray-500' : 'bg-red-600 hover:bg-red-700 text-white'}`}>
+            GENERATE BETS
+          </button>
+
+          <button onClick={goHome} className="mt-6 w-full bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 rounded-lg">
+            BACK TO HOME
+          </button>
+        </div>
+      );
+
+      const ResultsScreen = () => (
+        <div className="p-6">
+          <div className="flex justify-between mb-4">
+            <div>
+              <h2 className="text-2xl font-bold text-white">{generatedCombos.length} Bets</h2>
+              <p className="text-yellow-400 text-sm">Uses left: {freeUsesLeft}/3</p>
+            </div>
+            <button onClick={exportCombinations} className="bg-yellow-500 hover:bg-yellow-600 text-blue-900 font-bold py-2 px-4 rounded-lg">
+              EXPORT
+            </button>
+          </div>
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {generatedCombos.map((c, i) => (
+              <div key={i} className="bg-blue-900/50 rounded-lg p-3 flex gap-2 items-center flex-wrap">
+                <span className="text-gray-400">#{i+1}</span>
+                {c.numbers.map((n, idx) => (
+                  <div key={idx} className="bg-red-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold">{n}</div>
+                ))}
+                <div className="bg-yellow-500 text-blue-900 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold">{c.megaBall}</div>
+              </div>
+            ))}
+          </div>
+
+          {freeUsesLeft === 0 && (
+            <div className="mt-6 bg-red-900/50 p-5 rounded-lg border-2 border-red-500">
+              <p className="text-white font-bold text-center text-lg">No more free uses!</p>
+              <p className="text-gray-300 text-sm text-center mt-2">Upgrade to PRO for unlimited generations</p>
+              <button onClick={goToProVersion} className="w-full mt-4 bg-yellow-500 hover:bg-yellow-600 text-blue-900 font-bold py-3 rounded-lg">
+                GET PRO VERSION - $9.99
+              </button>
+            </div>
+          )}
+
+          <button onClick={goHome} className="mt-6 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-lg">
+            BACK TO HOME
+          </button>
+        </div>
+      );
+
+      const SimulatorScreen = () => (
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-white">SIMULATOR</h2>
+            <span className="text-yellow-400 font-bold">Uses: {freeUsesLeft}/3</span>
+          </div>
+
+          <select value={simSize} onChange={e => { setSimSize(parseInt(e.target.value)); setSimNumbers([]); setSimWinning([]); setSimResults(null); }}
+            className="w-full bg-blue-900 text-white p-3 rounded-lg font-bold mb-6">
+            {[8,9,10,11,12,13].map(n => <option key={n} value={n}>{n} numbers → {reductionFormulas[n].bets} bets</option>)}
+          </select>
+
+          <h3 className="text-white font-bold mb-3">1. Your {simSize} numbers ({simNumbers.length}/{simSize})</h3>
+          <div className="grid grid-cols-7 gap-2 mb-6">
+            {Array.from({length: 70}, (_, i) => i + 1).map(num => (
+              <button key={num} onClick={() => toggleSimNumber(num)}
+                className={`h-12 rounded-lg font-bold ${simNumbers.includes(num) ? 'bg-red-600 text-white' : 'bg-blue-900/50 text-gray-300 hover:bg-blue-800'}`}>
+                {num}
+              </button>
+            ))}
+          </div>
+
+          {simNumbers.length === simSize && (
+            <>
+              <h3 className="text-white font-bold mb-3">2. 5 winning numbers ({simWinning.length}/5)</h3>
+              <div className="grid grid-cols-6 gap-2 mb-6">
+                {simNumbers.map(num => (
+                  <button key={num} onClick={() => toggleWinning(num)}
+                    className={`h-14 rounded-lg font-bold ${simWinning.includes(num) ? 'bg-yellow-500 text-blue-900' : 'bg-blue-900/50 text-white hover:bg-blue-800'}`}>
+                    {num}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {simWinning.length === 5 && (
+            <button onClick={runSimulation} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-lg mb-6">
+              RUN SIMULATION
+            </button>
+          )}
+
+          {simResults && (
+            <div className="bg-blue-900/50 rounded-lg p-6 mb-6">
+              <h3 className="text-white font-bold text-xl mb-4 text-center">RESULTS</h3>
+              {Object.entries(simResults).map(([hits, count]) => (
+                <div key={hits} className="flex justify-between py-2">
+                  <span className="text-gray-300">{hits} hits:</span>
+                  <span className="text-yellow-400 font-bold">{count} bets</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {freeUsesLeft === 0 && (
+            <div className="bg-red-900/50 p-5 rounded-lg border-2 border-red-500">
+              <p className="text-white font-bold text-center">No more free uses!</p>
+              <p className="text-gray-300 text-sm text-center mt-2">Upgrade to PRO for unlimited simulations</p>
+              <button onClick={goToProVersion} className="w-full mt-3 bg-yellow-500 hover:bg-yellow-600 text-blue-900 font-bold py-3 rounded-lg">
+                GET PRO VERSION - $9.99
+              </button>
+            </div>
+          )}
+
+          <button onClick={goHome} className="w-full bg-gray-700 hover:bg-gray-800 text-white font-bold py-4 rounded-lg mt-6">
+            BACK TO HOME
+          </button>
+        </div>
+      );
+
+      const GuaranteesScreen = () => (
+        <div className="p-6">
+          <h2 className="text-2xl font-bold text-white mb-6">GUARANTEES</h2>
+          <table className="w-full text-white">
+            <thead className="bg-red-600">
+              <tr>
+                <th className="p-3 text-left">System</th>
+                <th className="p-3 text-center">Bets</th>
+                <th className="p-3 text-center">3+</th>
+                <th className="p-3 text-center">4+</th>
+                <th className="p-3 text-center">5+</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[8,9,10,11,12,13].map(n => (
+                <tr key={n} className="border-b border-blue-800">
+                  <td className="p-3 font-bold">{n} numbers</td>
+                  <td className="p-3 text-center">{reductionFormulas[n].bets}</td>
+                  <td className="p-3 text-center text-yellow-400">{reductionFormulas[n].guarantees[3]}%</td>
+                  <td className="p-3 text-center text-yellow-400">{reductionFormulas[n].guarantees[4]}%</td>
+                  <td className="p-3 text-center text-yellow-400">{reductionFormulas[n].guarantees[5]}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <button onClick={() => setScreen('home')} className="mt-6 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-lg">
+            BACK TO HOME
+          </button>
+        </div>
+      );
+
+      return (
+        <div className="min-h-screen text-white">
+          {screen === 'disclaimer' && <DisclaimerScreen />}
+          {screen === 'home' && <HomeScreen />}
+          {screen === 'numbers' && <NumberPickerScreen />}
+          {screen === 'megaball' && <MegaBallScreen />}
+          {screen === 'results' && <ResultsScreen />}
+          {screen === 'simulator' && <SimulatorScreen />}
+          {screen === 'guarantees' && <GuaranteesScreen />}
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<PyramidalApp />);
+  </script>
+</body>
+</html>

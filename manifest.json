@@ -1,0 +1,26 @@
+{
+  "name": "Pyramidal Algorithm",
+  "short_name": "Pyramidal",
+  "description": "Advanced number reduction system for lotteries. Entertainment only",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#000428",
+  "theme_color": "#FFD700",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "Megamillions-icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "Megamillions-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
+
