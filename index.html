@@ -22,8 +22,7 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // --- CONFIGURACIÓN DE ACTIVACIÓN ---
-    const SECRET_ACTIVATION_KEY = 'quetelascreido';
+    // --- CONFIGURACIÓN ---
     const WHATSAPP_NUMBER = '+34622362186';
     const QR_CODE_URL = 'https://placehold.co/300x300/FACC15/0F172A?text=SCAN+TO+PAY';
     // ------------------------------------
@@ -34,8 +33,6 @@
       const [isPremium, setIsPremium] = useState(localStorage.getItem('is_premium') === 'true');
       const [screen, setScreen] = useState('disclaimer');
       const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
-      const [activationKey, setActivationKey] = useState('');
-      const [keyError, setKeyError] = useState('');
 
       const [selections, setSelections] = useState({ 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0 });
       const [selectedNumbers, setSelectedNumbers] = useState({});
@@ -67,22 +64,7 @@
         setScreen('home');
       };
 
-      const checkActivationKey = () => {
-        if (activationKey.toUpperCase() === SECRET_ACTIVATION_KEY) {
-          localStorage.setItem('is_premium', 'true');
-          setIsPremium(true);
-          setScreen('home');
-          setKeyError('Activation Successful! Welcome to PRO.');
-          setTimeout(() => setKeyError(''), 3000);
-        } else {
-          setKeyError('Invalid Key. Please check the code or contact support.');
-        }
-      };
 
-      const handleKeyInput = (e) => {
-        setActivationKey(e.target.value.toUpperCase());
-        setKeyError('');
-      };
 
       const consumeUse = () => {
         if (isPremium) return true;
@@ -96,9 +78,9 @@
         return false;
       };
 
-      // Redirect to external PRO version page
+      // Redirect to payment screen
       const goToProVersion = () => {
-        window.open('https://manulcaide1968.github.io/Pyramidal-Algorithm-Pro/', '_blank');
+        setScreen('payment');
       };
 
       const reductionFormulas = {
@@ -300,31 +282,15 @@
         <div className="p-6 flex flex-col items-center min-h-screen text-center space-y-6">
           <h1 className="text-3xl font-black text-yellow-400 mt-8">PRO Activation</h1>
 
-          {!isPremium && (
-            <div className="bg-blue-900/50 rounded-xl p-6 max-w-sm w-full space-y-4 border border-blue-500">
-              <p className="text-white font-bold text-lg">STEP 1: Make Payment</p>
-              <p className="text-gray-300 text-sm">Transfer €9.90 (one-time fee) using the QR code or contact info below.</p>
-              <img src={QR_CODE_URL} alt="Payment QR Code" className="w-48 h-48 mx-auto rounded-lg shadow-xl border-4 border-yellow-500" onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/300x300/FACC15/0F172A?text=QR+Error'; }} />
-              <p className="text-gray-300 text-sm">Or contact support for payment details:</p>
-              <a href={`https://wa.me/${WHATSAPP_NUMBER.replace('+', '')}`} target="_blank" className="inline-flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg">
-                <span className="mr-2">📲</span> WhatsApp Support
-              </a>
-            </div>
-          )}
-
           <div className="bg-blue-900/50 rounded-xl p-6 max-w-sm w-full space-y-4 border border-blue-500">
-            <p className="text-white font-bold text-lg">STEP 2: Enter Key</p>
-            <p className="text-gray-300 text-sm">Enter the key provided after your payment is confirmed.</p>
-            <input type="text" value={activationKey} onChange={handleKeyInput} placeholder="Enter Activation Key"
-              className="w-full p-3 rounded-lg text-center text-blue-900 font-bold bg-yellow-200"
-            />
-            <button onClick={checkActivationKey} disabled={!activationKey}
-              className={`w-full py-3 rounded-lg font-bold text-lg ${activationKey ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-gray-700 text-gray-400'}`}>
-              ACTIVATE PRO
-            </button>
-            {keyError && (
-              <p className={`text-sm font-bold ${keyError.includes('Success') ? 'text-green-400' : 'text-red-400'}`}>{keyError}</p>
-            )}
+            <p className="text-white font-bold text-lg">Get Full Access</p>
+            <p className="text-gray-300 text-sm">Transfer €9.90 (one-time fee) using the QR code or contact us below.</p>
+            <img src={QR_CODE_URL} alt="Payment QR Code" className="w-48 h-48 mx-auto rounded-lg shadow-xl border-4 border-yellow-500" onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/300x300/FACC15/0F172A?text=QR+Error'; }} />
+            <p className="text-gray-300 text-sm">Or contact support for payment details:</p>
+            <a href={`https://wa.me/${WHATSAPP_NUMBER.replace('+', '')}`} target="_blank" className="inline-flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg w-full">
+              <span className="mr-2">📲</span> WhatsApp Support
+            </a>
+            <p className="text-yellow-400 text-xs mt-4">After payment, we'll send you the PRO version file directly.</p>
           </div>
 
           <button onClick={goHome} className="mt-4 w-full max-w-xs bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 rounded-lg">
