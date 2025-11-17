@@ -2,8 +2,7 @@
   "name": "Pyramidal Algorithm",
   "short_name": "Pyramidal",
   "description": "Advanced number reduction system for lotteries. Entertainment only",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#000428",
   "theme_color": "#FFD700",
@@ -23,4 +22,5 @@
     }
   ]
 }
+
 
