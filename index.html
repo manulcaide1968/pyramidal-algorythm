@@ -120,27 +120,43 @@
             return combos.slice(0, 32);
           },
           13: (n) => {
-            const combos = [];
-            const base = [
-              [n[0],n[1],n[2],n[3],n[4],n[5],n[6],n[8],n[9],n[10],n[12]],
-              [n[0],n[2],n[3],n[5],n[6],n[7],n[8],n[9],n[10],n[11],n[12]]
-            ];
-            base.forEach(arr => {
-              combos.push([arr[0],arr[1],arr[2],arr[3],arr[4]]);
-              combos.push([arr[0],arr[2],arr[3],arr[4],arr[5]]);
-              combos.push([arr[1],arr[2],arr[3],arr[5],arr[6]]);
-              combos.push([arr[0],arr[1],arr[4],arr[7],arr[8]]);
-              combos.push([arr[0],arr[3],arr[5],arr[7],arr[9]]);
-              combos.push([arr[1],arr[3],arr[6],arr[8],arr[9]]);
-              combos.push([arr[2],arr[4],arr[6],arr[8],arr[10]]);
-              combos.push([arr[1],arr[4],arr[5],arr[9],arr[10]]);
-              combos.push([arr[0],arr[5],arr[7],arr[9],arr[11]]);
-              combos.push([arr[1],arr[6],arr[8],arr[10],arr[11]]);
-              combos.push([arr[2],arr[3],arr[7],arr[9],arr[12]]);
-              combos.push([arr[0],arr[4],arr[6],arr[10],arr[12]]);
-            });
-            return combos.slice(0, 48);
-          }
+  // Helper functions for progressive reduction
+  const convert11to9 = (g) => [
+    [g[0],g[1],g[2],g[3],g[4],g[5],g[7],g[9],g[10]],
+    [g[0],g[2],g[3],g[4],g[5],g[6],g[8],g[9],g[10]],
+    [g[1],g[2],g[3],g[4],g[5],g[6],g[7],g[8],g[9]],
+    [g[0],g[1],g[3],g[5],g[6],g[7],g[8],g[9],g[10]]
+  ];
+  
+  const convert9to6 = (g) => [
+    [g[0],g[1],g[3],g[5],g[7],g[8]],
+    [g[0],g[2],g[3],g[4],g[6],g[8]],
+    [g[1],g[2],g[4],g[5],g[6],g[7]]
+  ];
+  
+  const convert6to5 = (g) => [
+    [g[0],g[1],g[2],g[3],g[5]],
+    [g[0],g[1],g[2],g[4],g[5]]
+  ];
+  
+  const step1 = [
+    [n[0],n[1],n[2],n[3],n[4],n[5],n[6],n[8],n[9],n[10],n[12]],
+    [n[0],n[2],n[3],n[5],n[6],n[7],n[8],n[9],n[10],n[11],n[12]]
+  ];
+  
+  const result = [];
+  step1.forEach(s => {
+    const step2 = convert11to9(s);
+    step2.forEach(s2 => {
+      const step3 = convert9to6(s2);
+      step3.forEach(s3 => {
+        result.push(...convert6to5(s3));
+      });
+    });
+  });
+  
+  return result;
+}
         };
         return formulas[size](nums);
       };
@@ -580,4 +596,5 @@
     root.render(<PyramidalApp />);
   </script>
 </body>
+
 </html>
